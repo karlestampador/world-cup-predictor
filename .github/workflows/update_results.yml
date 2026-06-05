@@ -1,0 +1,66 @@
+name: Update Match Results
+
+on:
+  schedule:
+    # Every 20 minutes during match windows (11:00–23:59 UTC)
+    - cron: "0,20,40 11-23 * * *"
+    # Every 3 hours outside match windows (00:00–10:59 UTC) to keep app alive
+    - cron: "0 0,3,6,9 * * *"
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  update-results:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check tournament date window
+        id: date_check
+        run: |
+          TODAY=$(date -u +%Y%m%d)
+          START=20260611
+          END=20260720
+          if [ "$TODAY" -lt "$START" ] || [ "$TODAY" -gt "$END" ]; then
+            echo "Outside tournament window ($TODAY). Exiting early."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Inside tournament window ($TODAY). Proceeding."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        if: steps.date_check.outputs.skip == 'false'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python 3.11
+        if: steps.date_check.outputs.skip == 'false'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        if: steps.date_check.outputs.skip == 'false'
+        run: pip install requests pandas
+
+      - name: Fetch latest match results
+        if: steps.date_check.outputs.skip == 'false'
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: python scripts/fetch_results.py
+
+      - name: Commit and push if results.csv changed
+        if: steps.date_check.outputs.skip == 'false'
+        run: |
+          git diff --quiet data/results.csv || (
+            git config user.name "github-actions[bot]" &&
+            git config user.email "github-actions[bot]@users.noreply.github.com" &&
+            git add data/results.csv &&
+            git commit -m "auto: update results [skip ci]" &&
+            git push
+          )
