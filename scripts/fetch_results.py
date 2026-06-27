@@ -1,5 +1,5 @@
 """
-Fetch finished World Cup 2026 matches from football-data.org and update data/results.csv.
+Fetch finished World Cup 2026 matches from football-data.org and update data/live/wc2026_results.csv.
 
 Usage:
     FOOTBALL_DATA_API_KEY=<token> python scripts/fetch_results.py
@@ -17,9 +17,9 @@ import pandas as pd
 import requests
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-MATCHES_CSV = REPO_ROOT / "data" / "matches.csv"
-RESULTS_CSV = REPO_ROOT / "data" / "results.csv"
-TEAMS_CSV = REPO_ROOT / "data" / "teams.csv"
+MATCHES_CSV = REPO_ROOT / "data" / "tournament" / "matches.csv"
+RESULTS_CSV = REPO_ROOT / "data" / "live" / "wc2026_results.csv"
+TEAMS_CSV = REPO_ROOT / "data" / "tournament" / "teams.csv"
 
 API_URL = "https://api.football-data.org/v4/competitions/WC/matches"
 API_KEY = os.environ.get("FOOTBALL_DATA_API_KEY", "")

@@ -122,23 +122,24 @@ def get_flag(fifa_code: str) -> str:
 
 @st.cache_data(ttl=300)
 def load_all_data() -> dict:
-    base = "data/"
+    tournament = "data/tournament/"
+    live = "data/live/"
 
-    matches = pd.read_csv(base + "matches.csv")
-    teams = pd.read_csv(base + "teams.csv")
-    cities = pd.read_csv(base + "host_cities.csv")
-    stages = pd.read_csv(base + "tournament_stages.csv")
-    test = pd.read_csv(base + "test.csv")
+    matches = pd.read_csv(tournament + "matches.csv")
+    teams = pd.read_csv(tournament + "teams.csv")
+    cities = pd.read_csv(tournament + "host_cities.csv")
+    stages = pd.read_csv(tournament + "tournament_stages.csv")
+    test = pd.read_csv(tournament + "test.csv")
 
     try:
-        results = pd.read_csv(base + "results.csv")
+        results = pd.read_csv(live + "wc2026_results.csv")
     except FileNotFoundError:
         results = pd.DataFrame(
             columns=["match_id", "home_score", "away_score", "result", "played_at"]
         )
 
     # ELO: most recent snapshot per country
-    elo_df = pd.read_csv(base + "elo_ratings_wc2026.csv")
+    elo_df = pd.read_csv(tournament + "elo_ratings_wc2026.csv")
     elo_df["snapshot_date"] = pd.to_datetime(elo_df["snapshot_date"])
     elo_df = elo_df.sort_values("snapshot_date")
     elo_latest = elo_df.groupby("country").last().reset_index()

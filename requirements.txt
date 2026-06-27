@@ -6,3 +6,8 @@ requests
 pytz
 scikit-learn
 matplotlib
+lightgbm
+scipy
+jupyter
+ipykernel
+python-dotenv

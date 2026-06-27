@@ -1,0 +1,18 @@
+{
+  "cache_key": {
+    "holdout_year": 2025,
+    "n_trainable": 30133,
+    "n_holdout": 781,
+    "start_years": [
+      1990,
+      1994,
+      1998,
+      2002,
+      2006,
+      2008
+    ]
+  },
+  "best_start_year": 2006,
+  "best_rps": 0.10751871018120057,
+  "fitted_at": "2026-06-27T02:07:55.145265"
+}
