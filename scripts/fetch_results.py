@@ -23,6 +23,28 @@ TEAMS_CSV = REPO_ROOT / "data" / "tournament" / "teams.csv"
 
 API_URL = "https://api.football-data.org/v4/competitions/WC/matches"
 API_KEY = os.environ.get("FOOTBALL_DATA_API_KEY", "")
+DEBUG_LOG = REPO_ROOT / "debug-685eb9.log"
+
+
+def _agent_log(hypothesis_id: str, location: str, message: str, data: dict) -> None:
+    # #region agent log
+    import json
+    import time
+
+    payload = {
+        "sessionId": "685eb9",
+        "hypothesisId": hypothesis_id,
+        "location": location,
+        "message": message,
+        "data": data,
+        "timestamp": int(time.time() * 1000),
+    }
+    try:
+        with open(DEBUG_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps(payload) + "\n")
+    except OSError:
+        pass
+    # #endregion
 
 
 def fuzzy_match_team(api_name: str, candidates: list[str], threshold: float = 0.6) -> str | None:
@@ -47,8 +69,15 @@ def determine_result(home_score: int, away_score: int) -> str:
 
 
 def main() -> int:
+    _agent_log(
+        "B",
+        "fetch_results.py:main:entry",
+        "fetch_results started",
+        {"api_key_present": bool(API_KEY), "api_key_len": len(API_KEY)},
+    )
     if not API_KEY:
         print("ERROR: FOOTBALL_DATA_API_KEY environment variable is not set.")
+        _agent_log("B", "fetch_results.py:main:no_key", "missing API key", {"exit_code": 1})
         return 1
 
     # --- Load local data ---
@@ -90,10 +119,29 @@ def main() -> int:
         api_data = response.json()
     except requests.RequestException as e:
         print(f"ERROR: API request failed: {e}")
+        _agent_log(
+            "C",
+            "fetch_results.py:main:api_error",
+            "API request failed",
+            {"error": str(e), "exit_code": 1},
+        )
         return 1
     except ValueError as e:
         print(f"ERROR: Failed to parse API response: {e}")
+        _agent_log(
+            "C",
+            "fetch_results.py:main:parse_error",
+            "API response parse failed",
+            {"error": str(e), "exit_code": 1},
+        )
         return 1
+
+    _agent_log(
+        "C",
+        "fetch_results.py:main:api_ok",
+        "API request succeeded",
+        {"status_code": response.status_code, "match_count": len(api_data.get("matches", []))},
+    )
 
     api_matches = api_data.get("matches", [])
 
@@ -141,14 +189,32 @@ def main() -> int:
         })
         already_recorded.add(match_id)
 
+    _agent_log(
+        "F",
+        "fetch_results.py:main:processed",
+        "finished processing API matches",
+        {
+            "api_finished_matches": len(api_matches),
+            "new_rows": len(new_rows),
+            "already_recorded": len(already_recorded),
+        },
+    )
+
     if not new_rows:
         print("No new results")
+        _agent_log("F", "fetch_results.py:main:no_new", "no new results to write", {"exit_code": 0})
         return 0
 
     new_df = pd.DataFrame(new_rows)
     updated_df = pd.concat([results_df, new_df], ignore_index=True)
     updated_df.to_csv(RESULTS_CSV, index=False)
     print(f"Updated results.csv with {len(new_rows)} new result{'s' if len(new_rows) != 1 else ''}")
+    _agent_log(
+        "E",
+        "fetch_results.py:main:written",
+        "wrote updated results csv",
+        {"new_rows": len(new_rows), "total_rows": len(updated_df), "exit_code": 0},
+    )
     return 0
 
 

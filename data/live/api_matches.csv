@@ -1,9 +1,4 @@
 date,home_team,away_team,home_score,away_score,tournament,neutral,is_shootout,shootout_winner,source
-2026-06-26,Turkey,United States,3,2,FIFA World Cup,False,False,,football_data_org
-2026-06-26,Paraguay,Australia,0,0,FIFA World Cup,False,False,,football_data_org
-2026-06-26,Norway,France,1,4,FIFA World Cup,False,False,,football_data_org
-2026-06-26,Senegal,Iraq,5,0,FIFA World Cup,False,False,,football_data_org
-2026-06-27,Uruguay,Spain,0,1,FIFA World Cup,False,False,,football_data_org
-2026-06-27,Cape Verde Islands,Saudi Arabia,0,0,FIFA World Cup,False,False,,football_data_org
-2026-06-27,New Zealand,Belgium,1,5,FIFA World Cup,False,False,,football_data_org
-2026-06-27,Egypt,Iran,1,1,FIFA World Cup,False,False,,football_data_org
+2026-06-28,Jordan,Argentina,1,3,FIFA World Cup,False,False,,football_data_org
+2026-06-28,Algeria,Austria,3,3,FIFA World Cup,False,False,,football_data_org
+2026-06-28,South Africa,Canada,0,1,FIFA World Cup,False,False,,football_data_org

@@ -54,6 +54,14 @@ jobs:
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
         run: python scripts/fetch_results.py
 
+      - name: Print debug log on failure
+        if: failure() && steps.date_check.outputs.skip == 'false'
+        run: |
+          echo "=== debug-685eb9.log ==="
+          if [ -f debug-685eb9.log ]; then cat debug-685eb9.log; else echo "(no debug log file)"; fi
+          echo "=== git status ==="
+          git status --short || true
+
       - name: Commit and push if results changed
         if: steps.date_check.outputs.skip == 'false'
         run: |

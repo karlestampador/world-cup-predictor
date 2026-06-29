@@ -8,6 +8,7 @@ All models are scored on the same labelled match set (LR training rows: WC
 LR: proper cross-validation (re-fit each fold).
 ELO / DC: fixed per-match predictions; folds only vary which indices are averaged.
 DC: argmax(home_win, draw, away_win) from win probabilities — not scoreline MAE.
+Draw inflation is disabled for DC benchmarking (calibration aid only for tournament preds).
 """
 
 from __future__ import annotations
@@ -312,7 +313,7 @@ def evaluate_dc(
                 row['home_team'],
                 row['away_team'],
                 bool(row['is_neutral']),
-                bool(row['is_group_stage']),
+                False,  # no draw inflation for benchmarking
             )
             y_pred[i] = argmax_outcome(p_hw, p_d, p_aw)
         except Exception:
@@ -328,7 +329,7 @@ def evaluate_dc(
         accuracy=acc,
         std=std,
         fold_accs=fold_accs,
-        note='argmax(home/draw/away) from DC win probabilities',
+        note='argmax(home/draw/away); no draw inflation',
     )
 
 

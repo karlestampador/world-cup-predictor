@@ -117,6 +117,7 @@ TEAM_NAME_MAP: dict[str, str] = {
     "DR Congo": "DR Congo",
     "Congo DR": "DR Congo",
     "Cabo Verde Islands": "Cape Verde",
+    "Cape Verde Islands": "Cape Verde",
     "North Macedonia": "North Macedonia",
     "United States of America": "United States",
     "USMNT": "United States",
