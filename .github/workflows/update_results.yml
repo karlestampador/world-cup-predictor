@@ -1,6 +1,7 @@
 name: Update Match Results
 
 on:
+  workflow_dispatch:
   schedule:
     # Every 20 minutes during match windows (11:00–23:59 UTC)
     - cron: "0,20,40 11-23 * * *"
@@ -48,27 +49,107 @@ jobs:
         if: steps.date_check.outputs.skip == 'false'
         run: pip install requests pandas
 
+      - name: Verify API key configured
+        if: steps.date_check.outputs.skip == 'false'
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, time
+          from pathlib import Path
+
+          key = os.environ.get("FOOTBALL_DATA_API_KEY", "")
+          payload = {
+              "sessionId": "685eb9",
+              "hypothesisId": "B",
+              "location": "workflow:verify_key",
+              "message": "repository secret check",
+              "data": {"api_key_present": bool(key), "api_key_len": len(key)},
+              "timestamp": int(time.time() * 1000),
+          }
+          Path("debug-685eb9.log").open("a", encoding="utf-8").write(json.dumps(payload) + "\n")
+          if not key:
+              print("::error::FOOTBALL_DATA_API_KEY repository secret is missing or empty")
+              raise SystemExit(1)
+          print(f"FOOTBALL_DATA_API_KEY is set (length={len(key)})")
+          PY
+
       - name: Fetch latest match results
         if: steps.date_check.outputs.skip == 'false'
         env:
           FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
         run: python scripts/fetch_results.py
 
-      - name: Print debug log on failure
-        if: failure() && steps.date_check.outputs.skip == 'false'
-        run: |
-          echo "=== debug-685eb9.log ==="
-          if [ -f debug-685eb9.log ]; then cat debug-685eb9.log; else echo "(no debug log file)"; fi
-          echo "=== git status ==="
-          git status --short || true
-
       - name: Commit and push if results changed
         if: steps.date_check.outputs.skip == 'false'
         run: |
-          git diff --quiet data/live/wc2026_results.csv || (
-            git config user.name "github-actions[bot]" &&
-            git config user.email "github-actions[bot]@users.noreply.github.com" &&
-            git add data/live/wc2026_results.csv &&
-            git commit -m "auto: update results [skip ci]" &&
-            git push
-          )
+          python - <<'PY'
+          import json, time
+          from pathlib import Path
+
+          payload = {
+              "sessionId": "685eb9",
+              "hypothesisId": "E",
+              "location": "workflow:pre_commit",
+              "message": "checking results csv diff",
+              "data": {"csv_exists": Path("data/live/wc2026_results.csv").exists()},
+              "timestamp": int(time.time() * 1000),
+          }
+          Path("debug-685eb9.log").open("a", encoding="utf-8").write(json.dumps(payload) + "\n")
+          PY
+
+          if git diff --quiet data/live/wc2026_results.csv; then
+            echo "No changes to wc2026_results.csv — skipping commit"
+            python - <<'PY'
+          import json, time
+          from pathlib import Path
+          Path("debug-685eb9.log").open("a", encoding="utf-8").write(json.dumps({
+              "sessionId": "685eb9",
+              "hypothesisId": "E",
+              "location": "workflow:commit_skipped",
+              "message": "no csv diff",
+              "data": {"exit_code": 0},
+              "timestamp": int(time.time() * 1000),
+          }) + "\n")
+          PY
+          else
+            echo "Results changed — committing and pushing"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/live/wc2026_results.csv
+            git commit -m "auto: update results [skip ci]"
+            if ! git push; then
+              python - <<'PY'
+          import json, time
+          from pathlib import Path
+          Path("debug-685eb9.log").open("a", encoding="utf-8").write(json.dumps({
+              "sessionId": "685eb9",
+              "hypothesisId": "E",
+              "location": "workflow:push_failed",
+              "message": "git push rejected",
+              "data": {"exit_code": 1},
+              "timestamp": int(time.time() * 1000),
+          }) + "\n")
+          PY
+              echo "::error::git push failed — check branch protection and Actions write permissions"
+              exit 1
+            fi
+            python - <<'PY'
+          import json, time
+          from pathlib import Path
+          Path("debug-685eb9.log").open("a", encoding="utf-8").write(json.dumps({
+              "sessionId": "685eb9",
+              "hypothesisId": "E",
+              "location": "workflow:push_ok",
+              "message": "git push succeeded",
+              "data": {"exit_code": 0},
+              "timestamp": int(time.time() * 1000),
+          }) + "\n")
+          PY
+          fi
+
+      - name: Print debug log
+        if: always() && steps.date_check.outputs.skip == 'false'
+        run: |
+          echo "=== debug-685eb9.log ==="
+          if [ -f debug-685eb9.log ]; then cat debug-685eb9.log; else echo "(no debug log file)"; fi
